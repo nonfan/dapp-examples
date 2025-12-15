@@ -28,18 +28,18 @@ export default function Modal({
 }: Props) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-      <div className="w-full max-w-[520px] card overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <div className="w-full max-w-md card">
         {title ? (
-          <div className="px-3 py-2 border-b border-gray-200 text-[15px] font-semibold">
-            {title}
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h3 className="font-medium text-gray-900">{title}</h3>
           </div>
         ) : null}
-        <div className="p-3">{children}</div>
-        <div className="flex gap-2 justify-end p-3 border-t border-gray-200">
+        <div className="p-4">{children}</div>
+        <div className="flex gap-2 justify-end p-4 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="px-3 py-1.5 rounded-lg border border-gray-300 bg-white disabled:opacity-60 text-sm"
+            className="btn btn-secondary btn-sm"
             disabled={confirmLoading}
           >
             {cancelText}
@@ -47,13 +47,13 @@ export default function Modal({
           {onConfirm ? (
             <button
               onClick={onConfirm}
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-60 text-sm"
+              className="btn btn-primary btn-sm"
               disabled={confirmDisabled || confirmLoading}
               title={confirmTitle}
             >
               {confirmLoading ? (
                 <span className="flex items-center gap-2">
-                  <Spinner size={14} /> {confirmText}
+                  <Spinner size={12} /> {confirmText}
                 </span>
               ) : (
                 confirmText

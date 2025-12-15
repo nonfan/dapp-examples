@@ -1,12 +1,12 @@
 import {
   useWeb3AuthConnect,
   useWeb3AuthDisconnect,
-  useWeb3AuthUser,
 } from "@web3auth/modal/react";
 import { useChainId, useSwitchChain, useAccount } from "wagmi";
 import CONSTANTS from "../constants";
 import { useEffect, useRef, useState } from "react";
 import Spinner from "./Spinner";
+import makeBlockie from 'ethereum-blockies-base64';
 
 export default function ConnectWallet() {
   const {
@@ -15,7 +15,6 @@ export default function ConnectWallet() {
     loading: connectLoading,
   } = useWeb3AuthConnect();
   const { disconnect, loading: disconnectLoading } = useWeb3AuthDisconnect();
-  const { userInfo } = useWeb3AuthUser();
   const chainId = useChainId();
   const switchChain = useSwitchChain();
   const { address } = useAccount();
@@ -47,66 +46,60 @@ export default function ConnectWallet() {
   }, [isConnected, chainId, switchChain]);
 
   return (
-    <div className="cursor-pointer relative">
+    <div className="relative">
       {!isConnected ? (
         <button
-          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition"
+          className="btn btn-primary btn-sm"
           disabled={connectLoading}
           onClick={connect}
         >
           {connectLoading ? (
             <span className="flex items-center gap-2">
-              <Spinner size={14} /> Connecting…
+              <Spinner size={12} /> 连接中
             </span>
           ) : (
-            "Connect Wallet"
+            "连接钱包"
           )}
         </button>
       ) : (
         <div>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-gray-100 text-xs"
+            className="btn btn-secondary btn-sm font-mono flex items-center gap-2"
           >
-            <div className="h-5 w-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px]">
-              {(shortAddress || userInfo?.email || userInfo?.name || "U")
-                .charAt(0)
-                .toUpperCase()}
-            </div>
-            <div className="text-gray-800">
-              {shortAddress || userInfo?.email || userInfo?.name || "User"}
-            </div>
+            {address && (
+              <img 
+                src={makeBlockie(address)} 
+                alt="Avatar"
+                className="w-4 h-4 rounded-full"
+              />
+            )}
+            {shortAddress || "已连接"}
           </button>
           {open ? (
             <div
               ref={menuRef}
-              className="absolute right-0 mt-2 w-40 card p-2 z-50"
+              className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50"
             >
               <button
-                className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"
+                className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-50 transition-colors"
                 onClick={() => {
                   if (address) navigator.clipboard.writeText(address);
                   setOpen(false);
                 }}
                 disabled={!address}
               >
-                Copy Address
+                复制地址
               </button>
               <button
-                className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"
+                className="w-full text-left px-3 py-2 rounded text-sm hover:bg-gray-50 text-red-600 transition-colors"
                 onClick={() => {
                   setOpen(false);
                   disconnect();
                 }}
                 disabled={disconnectLoading}
               >
-                {disconnectLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Spinner size={12} /> Disconnecting…
-                  </span>
-                ) : (
-                  "Disconnect"
-                )}
+                {disconnectLoading ? "断开中..." : "断开连接"}
               </button>
             </div>
           ) : null}
