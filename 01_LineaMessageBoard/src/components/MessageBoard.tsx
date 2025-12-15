@@ -29,18 +29,23 @@ export default function MessageBoard() {
   });
   const countLoading = countData === undefined;
   const count = Number(countData ?? 0n);
+  const [limit, setLimit] = useState(50);
   const contracts = useMemo(
     () =>
       count
-        ? Array.from({ length: count }, (_, i) => ({
-            abi: abi as Abi,
-            address: contractAddress,
-            functionName: "getMessage" as const,
-            args: [BigInt(i)] as const,
-            chainId: activeChainId,
-          }))
+        ? (() => {
+            const start = Math.max(0, count - limit);
+            const length = count - start;
+            return Array.from({ length }, (_, i) => ({
+              abi: abi as Abi,
+              address: contractAddress,
+              functionName: "getMessage" as const,
+              args: [BigInt(start + i)] as const,
+              chainId: activeChainId,
+            }));
+          })()
         : [],
-    [count, contractAddress, activeChainId]
+    [count, limit, contractAddress, activeChainId]
   );
   const { data: messagesData } = useReadContracts({ contracts });
   const listLoading = countLoading || (count > 0 && messagesData === undefined);
@@ -62,6 +67,23 @@ export default function MessageBoard() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const avatarCache = useRef<Map<string, string>>(new Map());
+
+  // 缓存头像生成函数，限制缓存大小
+  const getAvatar = (address: string) => {
+    if (!address) return '';
+    if (!avatarCache.current.has(address)) {
+      // 限制缓存大小，防止内存泄漏
+      if (avatarCache.current.size >= 100) {
+        const firstKey = avatarCache.current.keys().next().value;
+        if (firstKey) {
+          avatarCache.current.delete(firstKey);
+        }
+      }
+      avatarCache.current.set(address, makeBlockie(address));
+    }
+    return avatarCache.current.get(address)!;
+  };
 
   const messages = useMemo(
     () =>
@@ -181,11 +203,11 @@ export default function MessageBoard() {
       </div>
 
       {/* 消息列表区域 */}
-      <div className="flex-1 overflow-hidden">
-        <div 
-          ref={messagesContainerRef}
-          className="max-w-6xl mx-auto h-full overflow-y-auto px-4 py-4"
-        >
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto"
+      >
+        <div className="max-w-6xl mx-auto px-4 py-4">
           {listLoading ? (
             <div className="card p-8 text-center">
               <Spinner size={20} />
@@ -197,6 +219,16 @@ export default function MessageBoard() {
             </div>
           ) : (
             <>
+              {limit < count ? (
+                <div className="flex justify-center mb-2">
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setLimit((v) => Math.min(count, v + 50))}
+                  >
+                    加载更多
+                  </button>
+                </div>
+              ) : null}
               {messages.map((m, idx) => (
                 <div key={idx} className={`px-4 py-2 ${m.isOwnMessage ? 'flex justify-end' : ''}`}>
                   <div className={`w-full max-w-[70%] ${m.isOwnMessage ? 'ml-auto' : 'mr-auto'}`}>
@@ -204,7 +236,7 @@ export default function MessageBoard() {
                       // 自己的消息 - 右侧
                       <div className="flex items-end gap-3 flex-row-reverse">
                         <img 
-                          src={makeBlockie(m.fullAddress)} 
+                          src={getAvatar(m.fullAddress)} 
                           alt="Avatar"
                           className="w-8 h-8 rounded-full flex-shrink-0"
                         />
@@ -221,7 +253,7 @@ export default function MessageBoard() {
                       // 其他人的消息 - 左侧
                       <div className="flex items-end gap-3">
                         <img 
-                          src={makeBlockie(m.fullAddress)} 
+                          src={getAvatar(m.fullAddress)} 
                           alt="Avatar"
                           className="w-8 h-8 rounded-full flex-shrink-0"
                         />

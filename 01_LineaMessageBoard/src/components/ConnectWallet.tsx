@@ -24,6 +24,16 @@ export default function ConnectWallet() {
       : undefined;
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const avatarCache = useRef<string | null>(null);
+
+  // 缓存头像生成
+  const getAvatar = () => {
+    if (!address) return null;
+    if (!avatarCache.current) {
+      avatarCache.current = makeBlockie(address);
+    }
+    return avatarCache.current;
+  };
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!menuRef.current) return;
@@ -44,6 +54,11 @@ export default function ConnectWallet() {
       switchChain.mutate({ chainId: CONSTANTS.LINEA_CHAIN_ID });
     }
   }, [isConnected, chainId, switchChain]);
+
+  // 当地址变化时清除头像缓存
+  useEffect(() => {
+    avatarCache.current = null;
+  }, [address]);
 
   return (
     <div className="relative">
@@ -67,9 +82,9 @@ export default function ConnectWallet() {
             onClick={() => setOpen((v) => !v)}
             className="btn btn-secondary btn-sm font-mono flex items-center gap-2"
           >
-            {address && (
+            {address && getAvatar() && (
               <img 
-                src={makeBlockie(address)} 
+                src={getAvatar()!} 
                 alt="Avatar"
                 className="w-4 h-4 rounded-full"
               />
